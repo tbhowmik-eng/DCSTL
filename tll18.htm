@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>HSM Sensitivity Regime Map — Guided Prototype (Panel-friendly)</title>
+
+<style>
+  body{font-family:system-ui;background:#f6f7fb;margin:0;color:#111}
+  .wrap{max-width:1400px;margin:auto;padding:20px}
+  .panel{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-bottom:14px}
+  h2{font-size:16px;margin:0 0 10px 0}
+  label{font-size:13px;color:#555;display:block;margin-top:10px}
+  input,select,textarea{width:100%;padding:8px;border:1px solid #ccc;border-radius:8px}
+  .small{font-size:12px;color:#555}
+  .note{background:#f3f4f6;padding:10px;border-radius:8px;font-size:12px}
+  .hidden{display:none}
+
+  .btn{padding:10px 12px;border-radius:10px;cursor:pointer;border:1px solid #ccc;background:#fff;font-size:13px}
+  .btn.primary{background:#1f6feb;border-color:#1f6feb;color:#fff}
+  .btn:disabled{opacity:.55; cursor:not-allowed}
+
+  .callout{border-left:4px solid #999;padding:12px;background:#fafafa;border-radius:10px;margin-top:10px;font-size:13px}
+  .warn{border-color:#b45309}
+  .good{border-color:#0f766e}
+  .softgood{border-color:#16a34a;background:#ecfdf5}
+  .softgray{border-color:#9ca3af;background:#f9fafb}
+
+  /* Strong red warning box */
+  .redBox{border-left:6px solid #b91c1c;background:#fef2f2;border-radius:12px;padding:12px}
+  .redBox b{display:block;margin-bottom:4px}
+
+  /* Tabs */
+  .tabs{
+    display:flex; gap:10px; flex-wrap:wrap;
+    background:#fff; border:1px solid #e5e7eb; border-radius:14px;
+    padding:10px; margin-bottom:14px;
+  }
+  .tabbtn{
+    border:1px solid #e5e7eb; background:#fff; padding:10px 12px;
+    border-radius:999px; cursor:pointer; font-size:13px;
+  }
+  .tabbtn[aria-selected="true"]{
+    border-color: rgba(31,111,235,.45);
+    box-shadow: 0 0 0 3px rgba(31,111,235,.12);
+  }
+  .tabbtn.locked{opacity:.55; cursor:not-allowed}
+  .tabpanel{display:none}
+  .tabpanel.active{display:block}
+
+  /* Regime cards (side-by-side) */
+  .regimeGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:980px){ .regimeGrid{grid-template-columns:1fr} }
+
+  .regime{border:1px solid #ddd;border-radius:12px;padding:12px;background:#fafafa}
+  .regime.active{border-left:6px solid #b45309;background:#fff7ed}
+  .regime.inactive{opacity:.70}
+  .regime h4{margin:0 0 6px 0;font-size:14px}
+  .regime p{margin:4px 0;font-size:12px}
+  .trigger{
+    font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","CourierNew", monospace;
+    font-size:12px;background:#eef2ff;padding:4px 6px;border-radius:6px;display:inline-block
+  }
+
+  /* Two-column layout: regimes + input box */
+  .twoCol{
+    display:grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap:14px;
+    margin-top:12px;
+    align-items:start;
+  }
+  @media (max-width: 980px){ .twoCol{grid-template-columns:1fr} }
+
+  .sideCard{border:1px solid #e5e7eb;border-radius:12px;padding:12px;background:#fff}
+  .divider{height:1px;background:#e5e7eb;margin:12px 0}
+
+  /* Bold blue input box */
+  .blueBox{
+    border:2px solid #1f6feb;
+    background:#eef5ff;
+    border-radius:14px;
+    padding:12px;
+  }
+  .blueBox h3{
+    margin:0 0 6px 0;
+    font-size:14px;
+    color:#0b3ea8;
+  }
+  .blueBadge{
+    display:inline-block;
+    padding:3px 10px;
+    border-radius:999px;
+    border:1px solid rgba(31,111,235,.35);
+    background:#fff;
+    font-size:12px;
+    color:#0b3ea8;
+    margin-left:8px;
+  }
+
+  /* Big “Next step” blue callout on Main */
+  .nextBlue{
+    border:2px solid rgba(31,111,235,.45);
+    background:#eef5ff;
+    border-radius:14px;
+    padding:12px;
+    margin-top:12px;
+  }
+  .nextBlue b{color:#0b3ea8}
+  .nextBlue .btn{border-color:rgba(31,111,235,.45)}
+  .nextBlue .btn.primary{border-color:#1f6feb}
+
+  .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","CourierNew", monospace;}
+  .kvs{display:grid;grid-template-columns: 170px 1fr;gap:8px;align-items:start}
+  .kvs div{font-size:13px}
+  .kvs .k{color:#555}
+  .kvs .v{color:#111}
+
+  /* Driver tables */
+  .dtableWrap{margin-top:8px}
+  table.dtable{width:100%;border-collapse:separate;border-spacing:0;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;background:#fff}
+  .dtable th,.dtable td{font-size:12px;padding:10px;border-bottom:1px solid #e5e7eb;vertical-align:top}
+  .dtable th{background:#f9fafb;color:#374151;text-align:left}
+  .dtable tr:last-child td{border-bottom:none}
+  .tag{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;font-size:11px;color:#374151}
+  .vmono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","CourierNew", monospace;}
+  .tight{line-height:1.35}
+
+  /* Adjustment box */
+  .adjGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+  @media (max-width:980px){ .adjGrid{grid-template-columns:1fr} }
+  .adjCard{border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:12px}
+  .adjCard h4{margin:0 0 6px 0;font-size:13px}
+  .adjCard .small{margin-top:6px}
+  .muted{color:#6b7280}
+  .adjCard.mutedCard{opacity:.70;background:#f9fafb}
+  .adjFlag{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;font-size:12px}
+  .adjFlag.on{border-color:#a7f3d0;background:#ecfdf5}
+  .adjFlag.off{border-color:#e5e7eb;background:#fff}
+
+  .steps ol{margin:8px 0 0 18px}
+  .steps li{margin:6px 0;font-size:13px;line-height:1.35}
+
+  /* =============================
+     Print / PDF styling
+     ============================= */
+  @media print {
+    body{background:#fff;color:#000}
+  }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <div class="tabs" role="tablist" aria-label="Prototype Tabs">
+    <button class="tabbtn" role="tab" id="tab-main" aria-selected="true" data-tab="main">Main</button>
+    <button class="tabbtn locked" role="tab" id="tab-diag" aria-selected="false" data-tab="diag" disabled title="Run example values first">Diagnostic checks</button>
+  </div>
+
+  <!-- MAIN TAB -->
+  <div class="tabpanel active" id="panel-main" role="tabpanel" aria-labelledby="tab-main">
+
+    <!-- Quick steps ONLY on Main tab -->
+    <div class="panel">
+      <h2>How to use this prototype (quick steps)</h2>
+      <div class="note steps">
+        <div class="small">
+          This is an early prototype created to demonstrate the proposed workflow and deliverable concept. It illustrates how the final framework/tool will identify sensitivity regimes and guide proportionate actions with clear stopping points.
+        </div>
+        <ol>
+          <li>Select a <b>comparison type</b>.</li>
+          <li>Select the <b>decision emphasis</b>. (Prototype runs <b>Total crashes only</b>.)</li>
+          <li>Click <b>Try example values</b> to populate inputs (you may edit values after they load).</li>
+          <li>Open <b>Diagnostic checks</b> and follow the prompts.</li>
+          <li>The tool generates <b>triggered regime(s)</b> and a <b>recommended action + stopping point</b>.</li>
+        </ol>
+        <div class="small">
+          The final tool will be refined with panel and DOT feedback and will include step-by-step instructions, example case files, and a brief training video.
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>1) Select comparison context</h2>
+
+      <label>Comparison type</label>
+      <select id="cmp">
+        <option value="">Select…</option>
+        <option value="3st_3sg">Stop-controlled vs Signalized (3ST vs 3SG)</option>
+      </select>
+
+      <label>Decision emphasis</label>
+      <select id="decision">
+        <option value="">Select…</option>
+        <option value="total">Planning-level (Total crashes) — <b>prototype operational</b></option>
+      </select>
+
+      <div class="note" style="margin-top:10px;">
+        <b>Prototype note:</b> This version demonstrates the workflow using <b>Total crashes</b>. In the final tool, additional decision contexts will be included.
+      </div>
+    </div>
+
+    <div class="panel hidden" id="regimePanel">
+      <h2>2) Regimes and case inputs</h2>
+
+      <div class="callout warn">
+        <b>What are “regimes”?</b><br>
+        Regimes are transparent trigger conditions that describe when comparative outcomes may be sensitive (e.g., ranking shifts).
+        They help focus the user on the few checks that matter for the case.
+      </div>
+
+      <div class="callout good hidden" id="caseMsg"></div>
+
+      <div class="twoCol">
+        <div class="sideCard">
+          <div class="small" style="margin-bottom:8px;">
+            <b>Possible regimes</b> (triggered regimes highlight in red)
+          </div>
+          <div id="regimeGrid" class="regimeGrid"></div>
+        </div>
+
+        <div class="blueBox">
+          <h3>Example inputs <span class="blueBadge">demo</span></h3>
+          <div class="small">
+            Click <b>Try example values</b> to populate the fields below (you may edit after they populate).
+          </div>
+
+          <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn primary" id="btnExample" disabled>Try example values</button>
+          </div>
+
+          <div id="inputsBody" class="hidden">
+            <label>Major-road AADT</label>
+            <input type="number" id="maj" placeholder="e.g., 16000">
+
+            <label>Minor-road AADT</label>
+            <input type="number" id="min" placeholder="e.g., 3200">
+
+            <label>Left-turn lanes on major approaches</label>
+            <select id="lt">
+              <option value="0">0</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+            </select>
+
+            <div class="small" style="margin-top:10px;"><b>Calibration factors (optional in prototype)</b></div>
+            <label>Calibration factor — Alternative A</label>
+            <input type="number" id="calA" step="0.01" placeholder="e.g., 1.05">
+            <label>Calibration factor — Alternative B</label>
+            <input type="number" id="calB" step="0.01" placeholder="e.g., 1.20">
+          </div>
+
+          <div id="nextStepMain" class="nextBlue hidden">
+            <div>
+              <b>Next step:</b> Open <b>Diagnostic checks</b> to see the recommended action, stopping point, and adjustment options.
+            </div>
+            <div style="margin-top:10px;">
+              <button class="btn primary" id="btnGoDiagMain">Open Diagnostic checks →</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- DIAGNOSTIC TAB -->
+  <div class="tabpanel" id="panel-diag" role="tabpanel" aria-labelledby="tab-diag">
+    <div class="panel">
+      <h2>Diagnostic checks</h2>
+
+      <!-- "How to use this page" block ONLY on Diagnostic tab -->
+      <div class="note steps">
+        <b>How to use this page:</b>
+        <div class="small" style="margin-top:6px;">
+          <b>What this page does:</b> This page translates the triggered regime(s) into a short set of diagnostic checks and then generates a recommended action and stopping point. The intent is to support consistent interpretation of comparative HSM results and memo-ready documentation. Feel free to modify any inputs and selections to see how the triggered regime(s) and recommended action change.
+        </div>
+        <ol>
+          <li>The tool automatically shows a <b>Recommended action + stopping point</b>.</li>
+          <li>For each issue flagged, the tool shows <b>minor adjustment</b> vs <b>advanced case-specific adjustment</b> options.</li>
+        </ol>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 style="font-size:14px;margin:0 0 8px 0;">
+        A) <b>Why this case behaves unexpectedly under HSM models</b><br>
+        <span style="font-weight: normal;">
+          identifying the input variables and model drivers that contribute to counterintuitive or sensitive results
+        </span>
+      </h2>
+
+      <div class="note" id="regimeInterp" style="margin-top:10px;">Run example values on the Main tab first.</div>
+
+      <div id="driverTables" class="note" style="margin-top:10px;">
+        Run example values to populate driver tables.
+      </div>
+
+      <div class="divider"></div>
+      <h2 style="font-size:14px;margin:0 0 8px 0;">B) Data availability</h2>
+
+      <div class="note">
+        <label>Was Minor-road AADT available?</label>
+        <select id="minorAvail">
+          <option value="">Select…</option>
+          <option value="yes">Yes — observed/measured Minor AADT available</option>
+          <option value="assumed">No — Minor AADT was assumed / proxy-based</option>
+        </select>
+
+        <div class="hidden" id="minorRed" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="divider"></div>
+      <h2 style="font-size:14px;margin:0 0 8px 0;">C) Calibration checks</h2>
+
+      <div class="note" id="calNotRelevant">
+        Calibration questions appear only if your inputs trigger a <b>calibration-sensitive regime</b>.
+      </div>
+
+      <div id="calRed" class="hidden" style="margin-top:10px;"></div>
+
+      <div id="calConsistencyDetails" class="hidden" style="margin-top:10px;">
+        <label>Are CalA and CalB from the same crash definition and time period?</label>
+        <select id="calSameBasis">
+          <option value="">Select…</option>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+          <option value="unknown">Unknown</option>
+        </select>
+
+        <label>Were calibration factors applied consistently across both alternatives?</label>
+        <select id="calSymmetry">
+          <option value="">Select…</option>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+          <option value="unknown">Unknown</option>
+        </select>
+      </div>
+
+      <div class="divider"></div>
+      <h2 style="font-size:14px;margin:0 0 8px 0;">D) Observed crash experience</h2>
+
+      <div class="note">
+        This item is included because it changes documentation and confidence in practice.
+      </div>
+
+      <label>Observed crash experience supports which statement?</label>
+      <select id="obsDirection">
+        <option value="">Select…</option>
+        <option value="supports_model">Observed experience is consistent with the model-based direction</option>
+        <option value="conflicts_model">Observed experience conflicts with the model-based direction</option>
+        <option value="mixed">Mixed / unclear</option>
+        <option value="not_available">Not available / not checked</option>
+      </select>
+
+      <div class="divider"></div>
+      <h2 style="font-size:14px;margin:0 0 8px 0;">E) Recommended action, stopping point, and adjustment options</h2>
+
+      <div class="callout softgray" id="decisionBox">
+        Enter inputs and answer the checks above to generate recommended action + stopping point.
+      </div>
+
+      <div class="adjGrid" id="adjGrid"></div>
+
+      <div class="divider"></div>
+      <h2 style="font-size:14px;margin:0 0 8px 0;">F) Memo-ready case summary</h2>
+
+      <!-- Buttons: Copy + PDF appear ONLY after Generate -->
+      <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn primary" id="btnMemo">Generate memo summary</button>
+        <button class="btn hidden" id="btnCopy">Copy</button>
+        <button class="btn hidden" id="btnPdf">Download PDF</button>
+      </div>
+
+      <label>Memo summary output</label>
+      <textarea id="memoOut" class="mono"></textarea>
+
+      <button class="btn" id="btnBackMain" style="margin-top:12px;">← Back to Main</button>
+    </div>
+  </div>
+
+<script>
+/* =============================
+   Tabs
+============================= */
+const tabBtns = document.querySelectorAll(".tabbtn");
+function showTab(name){
+  document.querySelectorAll(".tabpanel").forEach(p=>p.classList.remove("active"));
+  document.getElementById(`panel-${name}`).classList.add("active");
+  tabBtns.forEach(b=>b.setAttribute("aria-selected", b.dataset.tab === name ? "true":"false"));
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+tabBtns.forEach(b=>{
+  b.addEventListener("click", ()=>{
+    if(b.disabled) return;
+    showTab(b.dataset.tab);
+  });
+});
+document.getElementById("btnBackMain").addEventListener("click", ()=>showTab("main"));
+document.getElementById("btnGoDiagMain").addEventListener("click", ()=>showTab("diag"));
+
+/* =============================
+   Helpers
+============================= */
+function el(id){ return document.getElementById(id); }
+function val(id){ return document.getElementById(id).value; }
+function show(id){ el(id).classList.remove("hidden"); }
+function hide(id){ el(id).classList.add("hidden"); }
+function escapeHtml(s){
+  return String(s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+}
+function toNum(v){
+  if(v === "" || v === null || v === undefined) return NaN;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : NaN;
+}
+function isFiniteNum(x){ return Number.isFinite(x); }
+function fmt(n){
+  if(!Number.isFinite(n)) return "—";
+  return (Math.round(n*100)/100).toFixed(2);
+}
+function fmtInt(n){
+  if(!Number.isFinite(n)) return "—";
+  return String(Math.round(n));
+}
+function maxFinite(a,b){
+  const A = Number.isFinite(a) ? a : NaN;
+  const B = Number.isFinite(b) ? b : NaN;
+  if(Number.isFinite(A) && Number.isFinite(B)) return Math.max(A,B);
+  if(Number.isFinite(A)) return A;
+  if(Number.isFinite(B)) return B;
+  return NaN;
+}
+function uniq(arr){
+  const s = new Set();
+  arr.forEach(x=>{ if(x && String(x).trim()) s.add(String(x).trim()); });
+  return [...s];
+}
+
+/* =============================
+   Prototype values
+============================= */
+const PROTO = {
+  AADT_TRIGGER_R1: 15000,
+  AADT_CROSSOVER_START: 14500,
+  CMF_TURN_3ST: 0.60,
+  CMF_TURN_3SG: 0.70
+};
+
+/* =============================
+   Inputs
+============================= */
+function readInputs(){
+  return {
+    maj: toNum(val("maj")),
+    min: toNum(val("min")),
+    lt: Number(val("lt")),
+    calA: toNum(val("calA")),
+    calB: toNum(val("calB"))
+  };
+}
+function hasAnyInputs(d){
+  return isFiniteNum(d.maj) || isFiniteNum(d.min) || isFiniteNum(d.calA) || isFiniteNum(d.calB) || (d.lt !== 0);
+}
+
+/* =============================
+   Regimes
+============================= */
+function getRegimesForComparison(cmp){
+  if(cmp !== "3st_3sg") return [];
+  return [
+    { id:"R1", title:"High major-road AADT regime",
+      ruleText:`Major AADT ≥ ${PROTO.AADT_TRIGGER_R1.toLocaleString()}`,
+      check: d => isFiniteNum(d.maj) && d.maj >= PROTO.AADT_TRIGGER_R1,
+      zone:"high",
+      drivers: { primary:["Exposure (major-road AADT)"], secondary:[] }
+    },
+    { id:"R2", title:"Major–minor interaction regime",
+      ruleText:"Major ≥ 12,000 AND Minor ≥ 2,500",
+      check: d => isFiniteNum(d.maj) && isFiniteNum(d.min) && d.maj >= 12000 && d.min >= 2500,
+      zone:"transitional",
+      drivers: { primary:["Joint exposure (major+minor)","Crossover behavior (ranking shifts)"], secondary:[] }
+    },
+    { id:"R3", title:"Geometry-amplified regime",
+      ruleText:"Major ≥ 8,000 AND Left-turn lanes = 2",
+      check: d => isFiniteNum(d.maj) && d.maj >= 8000 && d.lt === 2,
+      zone:"transitional",
+      drivers: { primary:["Exposure (major-road AADT)"], secondary:["CMFs tied to turning/geometry"] }
+    },
+    { id:"R4", title:"Calibration difference regime",
+      ruleText:"Both cal factors entered AND |CalA − CalB| ≥ 0.10",
+      check: d => isFiniteNum(d.calA) && isFiniteNum(d.calB) && Math.abs(d.calA - d.calB) >= 0.10,
+      zone:"high",
+      drivers: { primary:["Calibration asymmetry across alternatives"], secondary:[] }
+    },
+    { id:"R5", title:"High calibration + exposure + geometry",
+      ruleText:"max(CalA, CalB) ≥ 1.15 AND Major ≥ 9,000 AND Left-turn ≥ 1",
+      check: d => {
+        const maxCal = maxFinite(d.calA, d.calB);
+        return isFiniteNum(d.maj) && d.maj >= 9000 && d.lt >= 1 && isFiniteNum(maxCal) && maxCal >= 1.15;
+      },
+      zone:"high",
+      drivers: { primary:["Exposure (major-road AADT)","Calibration asymmetry across alternatives"], secondary:["CMFs tied to turning/geometry"] }
+    }
+  ];
+}
+
+/* =============================
+   Driver meaning + case value (table)
+============================= */
+function driverMeaning(name){
+  switch(name){
+    case "Exposure (major-road AADT)":
+      return `3ST and 3SG use different SPF volume terms; predicted curves are not parallel. At higher major AADT (starting around ${PROTO.AADT_CROSSOVER_START.toLocaleString()}), differences can grow and comparisons may change.`;
+    case "Joint exposure (major+minor)":
+      return "When both major and minor AADT are high, small shifts in either input can change the comparative difference.";
+    case "Crossover behavior (ranking shifts)":
+      return "Near a crossover region, small input changes can flip the predicted ranking between alternatives.";
+    case "CMFs tied to turning/geometry":
+      return `Control-specific CMFs can differ across alternatives. Prototype example: 3ST CMF=${PROTO.CMF_TURN_3ST.toFixed(2)} vs 3SG CMF=${PROTO.CMF_TURN_3SG.toFixed(2)}.`;
+    case "Calibration asymmetry across alternatives":
+      return "If calibration differs (or is applied inconsistently), scaling can shift the comparison rather than true model behavior.";
+    default:
+      return "Driver meaning text not defined in prototype.";
+  }
+}
+function driverCaseValue(name, d){
+  if(name.includes("Exposure") && isFiniteNum(d.maj)) return `Major AADT = <span class="vmono">${fmtInt(d.maj)}</span>`;
+  if(name==="Joint exposure (major+minor)" && isFiniteNum(d.maj) && isFiniteNum(d.min))
+    return `Major=<span class="vmono">${fmtInt(d.maj)}</span>, Minor=<span class="vmono">${fmtInt(d.min)}</span>`;
+  if(name==="CMFs tied to turning/geometry")
+    return `LT=<span class="vmono">${d.lt}</span>; 3ST=<span class="vmono">${PROTO.CMF_TURN_3ST.toFixed(2)}</span>, 3SG=<span class="vmono">${PROTO.CMF_TURN_3SG.toFixed(2)}</span>`;
+  if(name==="Calibration asymmetry across alternatives" && isFiniteNum(d.calA) && isFiniteNum(d.calB))
+    return `CalA=<span class="vmono">${fmt(d.calA)}</span>, CalB=<span class="vmono">${fmt(d.calB)}</span>`;
+  return "—";
+}
+function renderDriverTable(tag, drivers, d){
+  if(!drivers.length){
+    return `<div class="dtableWrap"><span class="tag">${escapeHtml(tag)}</span><div class="small" style="margin-top:6px;">—</div></div>`;
+  }
+  const rows = drivers.map(dr=>`
+    <tr>
+      <td class="tight"><b>${escapeHtml(dr)}</b></td>
+      <td class="tight">${driverCaseValue(dr, d)}</td>
+      <td class="tight">${escapeHtml(driverMeaning(dr))}</td>
+    </tr>
+  `).join("");
+  return `
+    <div class="dtableWrap">
+      <span class="tag">${escapeHtml(tag)}</span>
+      <table class="dtable" style="margin-top:8px;">
+        <thead>
+          <tr>
+            <th style="width:26%;">Driver</th>
+            <th style="width:24%;">Case value</th>
+            <th>Meaning (tool text)</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+function mergeDrivers(trigRegs){
+  const p=[], s=[];
+  trigRegs.forEach(r=>{
+    (r.drivers?.primary||[]).forEach(x=>p.push(x));
+    (r.drivers?.secondary||[]).forEach(x=>s.push(x));
+  });
+  const primary = uniq(p);
+  const pset = new Set(primary);
+  const secondary = uniq(s.filter(x=>!pset.has(x)));
+  return { primary, secondary };
+}
+
+/* =============================
+   State
+============================= */
+let currentRegimes = [];
+let inputEnabled = false;
+
+/* =============================
+   Lock/Unlock diag
+============================= */
+function lockDiagnostics(){
+  el("tab-diag").disabled = true;
+  el("tab-diag").classList.add("locked");
+  el("tab-diag").title = "Run example values first";
+}
+function unlockDiagnostics(){
+  el("tab-diag").disabled = false;
+  el("tab-diag").classList.remove("locked");
+  el("tab-diag").title = "";
+}
+
+/* =============================
+   Render regime cards
+============================= */
+function renderRegimeCards(regimes){
+  const grid = el("regimeGrid");
+  grid.innerHTML = "";
+  regimes.forEach(r=>{
+    const card = document.createElement("div");
+    card.className = "regime inactive";
+    card.id = `card_${r.id}`;
+    card.innerHTML = `
+      <h4>${r.id}: ${r.title}</h4>
+      <div><span class="trigger">${r.ruleText}</span></div>
+      <p><b>Status:</b> <span id="status_${r.id}">Not evaluated</span></p>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+/* =============================
+   Context selection
+============================= */
+function onContextSelected(){
+  const cmp = val("cmp");
+  const decision = val("decision");
+
+  inputEnabled = false;
+  hide("inputsBody");
+  lockDiagnostics();
+  hide("caseMsg");
+  hide("regimePanel");
+  el("btnExample").disabled = true;
+  hide("nextStepMain");
+
+  // Reset memo actions visibility on context change (keeps UI clean)
+  hide("btnCopy"); hide("btnPdf");
+
+  if(!cmp || !decision) return;
+
+  currentRegimes = getRegimesForComparison(cmp);
+  renderRegimeCards(currentRegimes);
+
+  show("regimePanel");
+  el("btnExample").disabled = false;
+}
+el("cmp").addEventListener("change", onContextSelected);
+el("decision").addEventListener("change", onContextSelected);
+
+/* =============================
+   Triggered regimes
+============================= */
+function getTriggeredIds(d){
+  return (currentRegimes || []).filter(r => inputEnabled && r.check(d)).map(r=>r.id);
+}
+function getTriggeredRegimes(d){
+  return (currentRegimes || []).filter(r => inputEnabled && r.check(d));
+}
+function evaluateRegimes(){
+  const d = readInputs();
+  const trig = getTriggeredIds(d);
+
+  currentRegimes.forEach(r=>{
+    const card = el(`card_${r.id}`);
+    const status = el(`status_${r.id}`);
+    if(!card || !status) return;
+
+    if(!hasAnyInputs(d)){
+      card.className = "regime inactive";
+      status.textContent = "Not evaluated";
+      return;
+    }
+
+    const on = r.check(d);
+    if(on){
+      card.className = "regime active";
+      status.textContent = "Triggered";
+    } else {
+      card.className = "regime inactive";
+      status.textContent = "Not triggered";
+    }
+  });
+
+  if(hasAnyInputs(d)){
+    el("caseMsg").className = "callout good";
+    el("caseMsg").innerHTML = `<b>Triggered regime IDs:</b> <b>${trig.length ? trig.join(", ") : "None"}</b>.`;
+    show("caseMsg");
+  }
+}
+
+/* Minor AADT assumed -> red box */
+function updateMinorRed(){
+  const a = val("minorAvail");
+  if(a === "assumed"){
+    el("minorRed").innerHTML = `
+      <div class="redBox">
+        <b>Limited or incomplete data flagged</b>
+        Minor AADT is assumed/proxy-based. Document assumption source/range and refine assumptions if possible.
+      </div>`;
+    show("minorRed");
+  } else {
+    hide("minorRed");
+    el("minorRed").innerHTML = "";
+  }
+}
+el("minorAvail").addEventListener("change", ()=>{ updateMinorRed(); updateAll(); });
+
+/* Calibration visibility */
+function isCalibrationRegimeTriggered(){
+  if(!currentRegimes.length || !inputEnabled) return false;
+  const d = readInputs();
+  const trig = getTriggeredIds(d);
+  return trig.includes("R4") || trig.includes("R5");
+}
+function calibrationIssue(){
+  const same = val("calSameBasis");
+  const sym  = val("calSymmetry");
+  return (same==="no" || same==="unknown" || sym==="no" || sym==="unknown");
+}
+function updateCalibrationPanel(){
+  const calTrig = isCalibrationRegimeTriggered();
+  const issue = calibrationIssue();
+
+  if(calTrig){
+    hide("calNotRelevant");
+    show("calConsistencyDetails");
+
+    if(issue){
+      el("calRed").innerHTML = `
+        <div class="redBox">
+          <b>Outdated / inconsistent calibration flagged</b>
+          A calibration-sensitive regime is triggered AND calibration inputs are inconsistent/uncertain (No/Unknown selected).
+          Review/adjust calibration before interpreting the comparison.
+        </div>`;
+    } else {
+      el("calRed").innerHTML = `
+        <div class="redBox">
+          <b>Calibration-sensitive condition triggered</b>
+          Confirm calibration basis and consistency across alternatives before interpreting the comparison.
+        </div>`;
+    }
+    show("calRed");
+  } else {
+    show("calNotRelevant");
+    hide("calConsistencyDetails");
+    hide("calRed");
+    el("calRed").innerHTML = "";
+    el("calSameBasis").value = "";
+    el("calSymmetry").value = "";
+  }
+}
+el("calSameBasis").addEventListener("change", ()=>{ updateCalibrationPanel(); updateAll(); });
+el("calSymmetry").addEventListener("change", ()=>{ updateCalibrationPanel(); updateAll(); });
+
+/* A) Case summary + driver tables */
+function updateCaseAndDrivers(){
+  const box = el("regimeInterp");
+  const d = readInputs();
+  const cmp = val("cmp");
+  const decision = val("decision");
+
+  if(!cmp || !decision || !inputEnabled || !hasAnyInputs(d)){
+    box.textContent = "Run example values on the Main tab first.";
+    el("driverTables").innerHTML = "Run example values to populate driver tables.";
+    return;
+  }
+
+  const trigRegs = getTriggeredRegimes(d);
+  const trigIds = trigRegs.map(r=>r.id);
+
+  box.innerHTML = `
+    <div class="kvs">
+      <div class="k">Triggered regimes</div>
+      <div class="v"><span class="mono">${trigIds.length ? trigIds.join(", ") : "None"}</span></div>
+      <div class="k">Entered inputs</div>
+      <div class="v">Major=${fmtInt(d.maj)}, Minor=${fmtInt(d.min)}, LT=${d.lt}, CalA=${fmt(d.calA)}, CalB=${fmt(d.calB)}</div>
+    </div>
+  `;
+
+  const sets = mergeDrivers(trigRegs);
+  el("driverTables").innerHTML = `
+    ${renderDriverTable("Primary drivers", sets.primary, d)}
+    ${renderDriverTable("Secondary drivers", sets.secondary, d)}
+  `;
+}
+
+/* Readiness */
+function checksReady(){
+  const cmp = val("cmp");
+  const decision = val("decision");
+  const d = readInputs();
+  if(!cmp || !decision || !inputEnabled || !hasAnyInputs(d)) return false;
+
+  if(!val("minorAvail")) return false;
+  if(!val("obsDirection")) return false;
+
+  if(isCalibrationRegimeTriggered()){
+    if(!val("calSameBasis")) return false;
+    if(!val("calSymmetry")) return false;
+  }
+  return true;
+}
+
+/* Decision logic */
+function computeDecision(){
+  const minorAssumed = (val("minorAvail")==="assumed");
+  const calTrig = isCalibrationRegimeTriggered();
+  const calProb = calibrationIssue();
+  const obs = val("obsDirection");
+
+  let issues = [];
+  if(minorAssumed) issues.push("Limited or Incomplete Data");
+  if(calTrig && calProb) issues.push("Outdated Calibration");
+
+  let action = "Proceed as-is";
+  let stop = "Stop (prototype)";
+  let why = "No flagged issues requiring additional action were identified in this prototype.";
+
+  if(minorAssumed && !(calTrig && calProb)){
+    action = "Proceed after minor data refinement and documentation";
+    stop = "Stop after documenting refined assumption (prototype)";
+    why = "Limited data flagged (Minor AADT assumed). Apply the minor adjustment to strengthen interpretability.";
+  }
+
+  if(calTrig && calProb && !minorAssumed){
+    action = "Proceed after calibration review/adjustment";
+    stop = "Stop after resolving calibration inconsistency (prototype)";
+    why = "Outdated/inconsistent calibration flagged (No/Unknown selected) under a calibration-sensitive regime.";
+  }
+
+  if(minorAssumed && calTrig && calProb){
+    action = "Proceed after minor data refinement + calibration review";
+    stop = "Stop after documenting both actions (prototype)";
+    why = "Both limited data and calibration issues are flagged; apply minor actions before finalizing interpretation.";
+  }
+
+  if(obs === "conflicts_model"){
+    action = action.includes("Proceed as-is") ? "Proceed after minor checks (observed conflict)" : action;
+    stop = "Stop after minor checks; if still unclear, consider the advanced case-specific option";
+    why = "Observed experience conflicts with model direction; additional checks are appropriate before finalizing.";
+  } else if(obs === "mixed"){
+    action = action.includes("Proceed as-is") ? "Proceed after minor checks (mixed evidence)" : action;
+    stop = "Stop after minor checks; document uncertainty";
+    why = "Observed evidence is mixed/unclear; minor checks help avoid over-interpreting the comparison.";
+  }
+
+  return { action, stop, why, issues: uniq(issues) };
+}
+
+/* Adjustment cards (only two issues) */
+function buildAllAdjustmentCards(relevantIssues){
+  const cards = [
+    {
+      key:"Limited or Incomplete Data",
+      issue:"Limited or Incomplete Data",
+      minor:"Refine assumptions using context-appropriate ranges or comparable facilities, and check.",
+      adv:"Develop case-specific crash prediction models using available data to assess whether localized modeling improves interpretability."
+    },
+    {
+      key:"Outdated Calibration",
+      issue:"Outdated Calibration",
+      minor:"Review patterns from comparable or previously successful applications and adjust calibration factors using proportional or ratio-based updates.",
+      adv:"Recalculate calibration factors using available local data to evaluate whether full recalibration materially improves interpretation."
+    }
+  ];
+
+  return cards.map(c=>{
+    const on = relevantIssues.includes(c.key);
+    const muted = !on;
+    const flagText = on ? "relevant" : "not flagged";
+    const flagClass = (on ? "on" : "off");
+    const cardClass = (muted ? "adjCard mutedCard" : "adjCard");
+
+    return `
+      <div class="${cardClass}">
+        <h4>${escapeHtml(c.issue)}
+          <span class="adjFlag ${flagClass}">${escapeHtml(flagText)}</span>
+        </h4>
+        <div class="small"><b>Minor adjustment:</b> ${escapeHtml(c.minor)}</div>
+        <div class="small"><b>Advanced case-specific adjustment:</b> ${escapeHtml(c.adv)}</div>
+        <div class="small muted" style="margin-top:8px;">
+          Prototype note: Advanced options are shown only to illustrate the framework. In the final tool, users will see only the guidance relevant to their specific case, based on triggered regimes and diagnostic responses.
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function updateDecisionAndAdjustments(){
+  const box = el("decisionBox");
+  const adj = el("adjGrid");
+
+  let relevant = [];
+  if(checksReady()){
+    relevant = computeDecision().issues.slice();
+  }
+  adj.innerHTML = buildAllAdjustmentCards(relevant);
+
+  if(!checksReady()){
+    box.className = "callout softgray";
+    box.innerHTML = "Enter inputs and answer the checks above to generate recommended action + stopping point.";
+    return;
+  }
+
+  const d = computeDecision();
+  box.className = "callout softgood";
+  box.innerHTML = `<b>Recommended action:</b> ${escapeHtml(d.action)}<br>
+                   <b>Stopping point:</b> ${escapeHtml(d.stop)}<br>
+                   <b>Why:</b> ${escapeHtml(d.why)}
+                   <div class="small muted" style="margin-top:8px;">
+                     Prototype note: In the final tool, recommended actions and stopping points will vary by case.
+                     This example illustrates how case-specific guidance will be presented.
+                   </div>`;
+}
+
+/* =============================
+   Memo + Copy + PDF
+============================= */
+el("btnMemo").addEventListener("click", ()=>{
+  el("memoOut").value = buildMemo();
+
+  // show actions only after memo is generated
+  show("btnCopy");
+  show("btnPdf");
+});
+
+el("btnCopy").addEventListener("click", async ()=>{
+  try{ await navigator.clipboard.writeText(el("memoOut").value || ""); alert("Copied."); }
+  catch(e){ alert("Copy failed. Select and copy manually."); }
+});
+
+el("btnPdf").addEventListener("click", ()=>{
+  // Ensure memo exists
+  if(!(el("memoOut").value || "").trim()){
+    el("memoOut").value = buildMemo();
+    show("btnCopy");
+    show("btnPdf");
+  }
+  openMemoPdf();
+});
+
+function buildMemo(){
+  const d = readInputs();
+  const trig = getTriggeredIds(d);
+  const minorAvail = val("minorAvail") || "—";
+  const obs = val("obsDirection") || "—";
+  const calTrig = isCalibrationRegimeTriggered();
+  const calProb = calibrationIssue();
+  const dec = checksReady() ? computeDecision() : null;
+
+  const lines = [];
+  lines.push("CASE SUMMARY (prototype)");
+  lines.push("");
+  lines.push(`Context: ${val("cmp") || "—"}; decision emphasis: ${val("decision") || "—"} (prototype uses Total).`);
+  lines.push(`Inputs: Major=${fmtInt(d.maj)}, Minor=${fmtInt(d.min)}, LT=${d.lt}, CalA=${fmt(d.calA)}, CalB=${fmt(d.calB)}.`);
+  lines.push(`Triggered regimes: ${trig.length ? trig.join(", ") : "None"}.`);
+  lines.push(`Minor AADT availability: ${minorAvail}.`);
+  lines.push(`Observed experience: ${obs}.`);
+  lines.push(`Calibration-sensitive regime triggered: ${calTrig ? "Yes" : "No"}.`);
+  if(calTrig){
+    lines.push(`Calibration basis (same definition/period): ${val("calSameBasis") || "—"}.`);
+    lines.push(`Calibration applied consistently across alternatives: ${val("calSymmetry") || "—"}.`);
+    lines.push(`Calibration issue flagged: ${calProb ? "Yes" : "No"}.`);
+  }
+  if(dec){
+    lines.push("");
+    lines.push(`Recommended action: ${dec.action}`);
+    lines.push(`Stopping point: ${dec.stop}`);
+    lines.push(`Why: ${dec.why}`);
+    if(dec.issues.length) lines.push(`Issues flagged: ${dec.issues.join("; ")}`);
+  }
+  return lines.join("\n");
+}
+
+function openMemoPdf(){
+  const memoText = el("memoOut").value || buildMemo();
+  const now = new Date();
+  const stamp = now.toLocaleString();
+
+  const htmlBlocks = memoText
+    .split("\n\n")
+    .map(block => `<div class="blk">${escapeHtml(block).replace(/\n/g,"<br>")}</div>`)
+    .join("");
+
+  const w = window.open("", "_blank");
+  if(!w){
+    alert("Pop-up blocked. Please allow pop-ups for this site to download PDF.");
+    return;
+  }
+
+  w.document.open();
+  w.document.write(`
+    <!doctype html>
+    <html>
+    <head>
+      <meta charset="utf-8"/>
+      <title>HSM Case Memo (Prototype)</title>
+      <style>
+        body{margin:0;background:#fff;color:#111;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+        .print-wrap{max-width:820px;margin:0 auto;padding:28px}
+        .title{font-size:18px;font-weight:700;margin:0 0 6px 0}
+        .sub{font-size:12px;color:#444;margin:0 0 12px 0}
+        .hr{height:1px;background:#ddd;margin:14px 0}
+        .blk{font-size:12px;line-height:1.5;margin:0 0 10px 0}
+        .foot{font-size:11px;color:#555;margin-top:18px}
+        @media print{
+          @page { margin: 18mm; }
+          .print-wrap{padding:0;max-width:none}
+        }
+      </style>
+    </head>
+    <body>
+      <div class="print-wrap">
+        <div class="title">HSM Comparative Evaluation — Case Memo</div>
+        <div class="sub">Generated by prototype tool (illustrative). Timestamp: ${escapeHtml(stamp)}</div>
+        <div class="hr"></div>
+        ${htmlBlocks}
+        <div class="hr"></div>
+        <div class="foot">
+          Prototype note: This PDF illustrates memo-ready documentation output. In the final tool, guidance will be case-specific and streamlined.
+        </div>
+      </div>
+      <script>
+        window.onload = function(){
+          window.print();
+        };
+      <\/script>
+    </body>
+    </html>
+  `);
+  w.document.close();
+}
+
+/* updateAll */
+function updateAll(){
+  updateCalibrationPanel();
+  updateMinorRed();
+  updateCaseAndDrivers();
+  updateDecisionAndAdjustments();
+}
+
+/* Init */
+function init(){
+  lockDiagnostics();
+  hide("regimePanel");
+  el("btnExample").disabled = true;
+  hide("caseMsg");
+  hide("inputsBody");
+  hide("minorRed");
+  hide("calRed");
+  hide("calConsistencyDetails");
+  hide("nextStepMain");
+
+  // Copy/PDF hidden until memo generated
+  hide("btnCopy"); hide("btnPdf");
+
+  updateDecisionAndAdjustments();
+}
+init();
+
+/* Enable after context */
+function enableAfterContext(){
+  if(!val("cmp") || !val("decision")) return;
+  el("btnExample").disabled = false;
+}
+el("cmp").addEventListener("change", ()=>{ onContextSelected(); enableAfterContext(); });
+el("decision").addEventListener("change", ()=>{ onContextSelected(); enableAfterContext(); });
+
+/* Example values (only entry point) */
+el("btnExample").addEventListener("click", ()=>{
+  inputEnabled = true;
+  show("inputsBody");
+  unlockDiagnostics();
+
+  el("maj").value = 16000;
+  el("min").value = 3200;
+  el("lt").value = "1";
+  el("calA").value = 1.05;
+  el("calB").value = 1.20;
+
+  evaluateRegimes();
+
+  el("minorAvail").value = "assumed";
+  el("obsDirection").value = "supports_model";
+  el("calSameBasis").value = "no";
+  el("calSymmetry").value = "no";
+
+  // new run => hide memo actions until user regenerates
+  hide("btnCopy"); hide("btnPdf");
+  el("memoOut").value = "";
+
+  updateAll();
+  show("nextStepMain");
+});
+
+/* Live evaluation after example is loaded */
+["maj","min","calA","calB"].forEach(id=>{
+  el(id).addEventListener("input", ()=>{
+    if(currentRegimes.length && inputEnabled) {
+      evaluateRegimes();
+      updateAll();
+      show("nextStepMain");
+
+      // inputs changed => memo may be stale; hide actions until regenerated
+      hide("btnCopy"); hide("btnPdf");
+      el("memoOut").value = "";
+    }
+  });
+});
+el("lt").addEventListener("change", ()=>{
+  if(currentRegimes.length && inputEnabled) {
+    evaluateRegimes();
+    updateAll();
+    show("nextStepMain");
+
+    hide("btnCopy"); hide("btnPdf");
+    el("memoOut").value = "";
+  }
+});
+</script>
+
+</div>
+</body>
+</html>
